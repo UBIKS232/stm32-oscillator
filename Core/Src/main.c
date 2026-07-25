@@ -18,9 +18,11 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <string.h>
+#include "cmsis_os.h"
+#include "stm32f1xx_hal_def.h"
+#include "usart.h"
 #include "gpio.h"
-#include "stm32f1xx_hal.h"
-#include "stm32f1xx_hal_gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -45,29 +47,45 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-static uint8_t LED1_state = 0; // 0-点亮, 1-熄灭
-static uint32_t LED1_last_toggle_time = 0; // LED1上次转换时间
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void LED1_proc(void){
-    if((LED1_state == 1) && (HAL_GetTick() - LED1_last_toggle_time >= 100)){
-        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-        LED1_state = 0;
-        LED1_last_toggle_time = HAL_GetTick();
+void led1_task(void *pvParameters){
+    while(1){
+        HAL_GPIO_TogglePin(led1_GPIO_Port, led1_Pin);
+        vTaskDelay(pdMS_TO_TICKS(100));
+        HAL_GPIO_TogglePin(led1_GPIO_Port, led1_Pin);
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
-    else if ((LED1_state == 0) && (HAL_GetTick() - LED1_last_toggle_time >= 100)) {
-        HAL_GPIO_TogglePin(LED1_GPIO_Port, LED1_Pin);
-        LED1_state = 1;
-        LED1_last_toggle_time = HAL_GetTick();
+    vTaskDelete(NULL);
+}
+
+void led3_task(void *pvParameters){
+    while(1){
+        HAL_GPIO_TogglePin(led3_GPIO_Port, led3_Pin);
+        vTaskDelay(pdMS_TO_TICKS(100));
+        HAL_GPIO_TogglePin(led3_GPIO_Port, led3_Pin);
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
+    vTaskDelete(NULL);
+}
+
+void initial_task(void const* argument) {
+    taskENTER_CRITICAL();
+    xTaskCreate(led1_task, "led1_task", 128, NULL, 1, NULL);
+    xTaskCreate(led3_task, "led3_task", 128, NULL, 1, NULL);
+
+    vTaskDelete(NULL); // 别忘了退出任务
+    taskEXIT_CRITICAL();
 }
 /* USER CODE END 0 */
 
@@ -100,15 +118,24 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
+
+  /* Call init function for freertos objects (in cmsis_os2.c) */
+  MX_FREERTOS_Init();
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    LED1_proc();
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -158,6 +185,28 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM6 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM6)
+  {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
