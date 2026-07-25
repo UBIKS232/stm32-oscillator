@@ -1,0 +1,36 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            "interface": "swd",
+            "name": "CMSIS-DAP Debug",
+            "executable": "${workspaceFolder}/build/Debug/ttsy-oscillator.elf",
+            "device": "STM32F103RCTx",
+            "configFiles": [
+                "interface/cmsis-dap.cfg",
+                "target/stm32f1x.cfg"
+            ],
+            "openOCDLaunchCommands": [
+                "transport select swd",
+                "adapter speed 1000",
+                "reset_config none",
+                "cortex_m reset_config sysresetreq"
+            ],
+            "postOpenOCDResetCommands": [
+                "reset halt"
+            ],
+            "preLaunchTask": "Build Debug",
+            "runToEntryPoint": "main",
+            "svdFile": "D:/Coding/Keil5v41/packs/Keil/STM32F1xx_DFP/2.4.1/SVD/STM32F103xx.svd",
+            "showDevDebugOutput": "raw",
+            "gdbTarget": "localhost:50000",
+            "postStartSessionCommands": [
+                "shell sleep 2"
+            ],
+            "noDebug": false
+        }
+    ]
+}

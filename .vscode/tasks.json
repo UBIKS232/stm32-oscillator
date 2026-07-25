@@ -1,0 +1,46 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Debug",
+            "type": "shell",
+            "command": "cmake --build --preset Debug; if ($?) { arm-none-eabi-size -A -x ./build/Debug/ttsy-oscillator.elf }",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "Buid All"
+        },
+        {
+            "label": "Rebuild Debug",
+            "type": "shell",
+            "command": "cmake --build --preset Debug --clean-first; if ($?) { arm-none-eabi-size -A -x ./build/Debug/ttsy-oscillator.elf }",
+            "group": "build",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "Rebuild All"
+        },
+        {
+            "label": "Flash",
+            "type": "shell",
+            "command": "openocd",
+            "args": [
+                "-f", "interface/cmsis-dap.cfg",
+                "-f", "target/stm32f1x.cfg",
+                "-c", "reset_config none",
+                "-c", "cortex_m reset_config sysresetreq",
+                "-c", "adapter speed 1000",
+                "-c", "program ./build/Debug/ttsy-oscillator.elf verify reset exit"
+            ],
+            "dependsOn": [ "Build Debug" ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "BuidAll->Flash->AutoReset"
+        }
+    ]
+}

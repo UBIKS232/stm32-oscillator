@@ -1,0 +1,24 @@
+{
+    "[c]": {
+        "editor.wordBasedSuggestions": "off",
+        "editor.semanticHighlighting.enabled": true,
+        "editor.stickyScroll.defaultModel": "foldingProviderModel",
+        "editor.suggest.insertMode": "replace",
+        "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    },
+    "clangd.arguments": [
+        "--clang-tidy",
+        "--all-scopes-completion",
+        "--completion-style=detailed",
+        "--header-insertion=iwyu",
+        "--pch-storage=disk",
+        "--log=error",
+        "--j=5",
+        "--background-index",
+        "--compile-commands-dir=${workspaceFolder}/build/Debug"
+    ],
+    "cmake.configureOnEdit": false,
+    "cmake.pinnedCommands": [],
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "cortex-debug.variableUseNaturalFormat": false
+}
