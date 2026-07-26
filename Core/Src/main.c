@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include <stdlib.h>
 #include <string.h>
 #include "cmsis_os.h"
 #include "stm32f1xx_hal_def.h"
@@ -97,7 +98,13 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+    volatile int *p1 = (int *)malloc(64);
+    volatile int *p2 = (int *)malloc(128);
+    volatile int *p3 = (int *)malloc(128);
+    volatile int *p4 = (int *)malloc(128);
+    free(p1);
+    free(p3);
+    volatile int *p5 = (int *)malloc(100);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

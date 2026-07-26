@@ -15,10 +15,10 @@
         "--log=error",
         "--j=5",
         "--background-index",
-        "--compile-commands-dir=${workspaceFolder}/build/Debug"
+        "--compile-commands-dir=${workspaceFolder}/build/Debug",
+        "--query-driver=D:/Coding/arm-none-eabi-/bin/arm-none-eabi-gcc.exe"
     ],
     "cmake.configureOnEdit": false,
     "cmake.pinnedCommands": [],
-    "C_Cpp.intelliSenseEngine": "disabled",
     "cortex-debug.variableUseNaturalFormat": false
 }

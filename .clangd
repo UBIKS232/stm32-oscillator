@@ -1,0 +1,24 @@
+CompileFlags:
+  Add:
+    - -include
+    - FreeRTOSConfig.h
+    - -include
+    - FreeRTOS.h
+    - -include
+    - task.h
+    - -include
+    - queue.h
+    - -include
+    - semphr.h
+    - -include
+    - timers.h
+    - -include
+    - event_groups.h
+    - -include
+    - stream_buffer.h
+    - -include
+    - message_buffer.h
+    - -include
+    - croutine.h
+    - -include
+    - atomic.h

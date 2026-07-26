@@ -3,3 +3,11 @@
 \!ref/
 build/
 .cache/
+
+*.exe
+*.elf
+*.bin
+*.out
+*.obj
+*.a
+*.su
