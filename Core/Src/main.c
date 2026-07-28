@@ -24,16 +24,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef struct led_blink_info {
-    GPIO_TypeDef *gpiox;
-    uint16_t gpio_pin;
-    uint32_t period;
-} led_blink_info_typedef;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -49,13 +45,8 @@ typedef struct led_blink_info {
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-static const led_blink_info_typedef led1_blink_info = {
-    .gpiox = led1_GPIO_Port,
-    .gpio_pin = led1_Pin,
-    .period = 100,
-};
-TaskHandle_t led1_task_handle = {0};
-
+const char* send1_str = "send1 running.\n";
+const char* send2_str = "send2 running.\n";
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -67,40 +58,32 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static void prv_led_task(void *pvParameters){
-    led_blink_info_typedef *info = (led_blink_info_typedef *)pvParameters;
+void print_string(const char* str) {
+    vTaskSuspendAll();
 
-    while(1){
-        HAL_GPIO_TogglePin(info->gpiox, info->gpio_pin);
-        vTaskDelay(pdMS_TO_TICKS(info->period / 2));
-        HAL_GPIO_TogglePin(info->gpiox, info->gpio_pin);
-        vTaskDelay(pdMS_TO_TICKS(info->period / 2));
-    }
-    vTaskDelete(NULL);
+    HAL_UART_Transmit(&huart1, (const uint8_t*)str, strlen(str), HAL_MAX_DELAY);
+
+    xTaskResumeAll();
 }
 
-static void prv_contorl_task(void* pvParameters){
-    vTaskDelay(pdMS_TO_TICKS(1000));
+void send_task(void* p_arg) {
+    const char* str = (const char*)p_arg;
 
-    vTaskSuspend(led1_task_handle);
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    for (int i = 0; i < 100; i++) {
+        print_string(str);
+    }
 
-    vTaskResume(led1_task_handle);
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    vTaskDelete(led1_task_handle);
-    
     vTaskDelete(NULL);
 }
 
 void initial_task(void const* argument) {
     taskENTER_CRITICAL();
-
-    xTaskCreate(prv_led_task, "led1_task", 128, (void *)&led1_blink_info, 1, &led1_task_handle);
-    xTaskCreate(prv_contorl_task, "contorl_task", 128, NULL, 2, NULL);
+    
+    xTaskCreate(send_task, "send1", 128, (void*)send2_str, 1, NULL);
+    xTaskCreate(send_task, "send1", 128, (void*)send1_str, 1, NULL);
 
     vTaskDelete(NULL);
-    
+
     taskEXIT_CRITICAL();
 }
 /* USER CODE END 0 */
