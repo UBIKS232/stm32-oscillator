@@ -18,10 +18,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include <stdlib.h>
-#include <string.h>
 #include "cmsis_os.h"
-#include "stm32f1xx_hal_def.h"
+#include "stm32f103xe.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -32,7 +30,11 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef struct led_blink_info {
+    GPIO_TypeDef *gpiox;
+    uint16_t gpio_pin;
+    uint32_t period;
+} led_blink_info_typedef;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -48,7 +50,16 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+static const led_blink_info_typedef led1_blink_info = {
+    .gpiox = led1_GPIO_Port,
+    .gpio_pin = led1_Pin,
+    .period = 100,
+};
+static const led_blink_info_typedef led3_blink_info = {
+    .gpiox = led3_GPIO_Port,
+    .gpio_pin = led3_Pin,
+    .period = 300,
+};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -60,30 +71,22 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void led1_task(void *pvParameters){
-    while(1){
-        HAL_GPIO_TogglePin(led1_GPIO_Port, led1_Pin);
-        vTaskDelay(pdMS_TO_TICKS(100));
-        HAL_GPIO_TogglePin(led1_GPIO_Port, led1_Pin);
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-    vTaskDelete(NULL);
-}
+void led_task(void *pvParameters){
+    led_blink_info_typedef *info = (led_blink_info_typedef *)pvParameters;
 
-void led3_task(void *pvParameters){
     while(1){
-        HAL_GPIO_TogglePin(led3_GPIO_Port, led3_Pin);
-        vTaskDelay(pdMS_TO_TICKS(100));
-        HAL_GPIO_TogglePin(led3_GPIO_Port, led3_Pin);
-        vTaskDelay(pdMS_TO_TICKS(100));
+        HAL_GPIO_TogglePin(info->gpiox, info->gpio_pin);
+        vTaskDelay(pdMS_TO_TICKS(info->period / 2));
+        HAL_GPIO_TogglePin(info->gpiox, info->gpio_pin);
+        vTaskDelay(pdMS_TO_TICKS(info->period / 2));
     }
     vTaskDelete(NULL);
 }
 
 void initial_task(void const* argument) {
     taskENTER_CRITICAL();
-    xTaskCreate(led1_task, "led1_task", 128, NULL, 1, NULL);
-    xTaskCreate(led3_task, "led3_task", 128, NULL, 1, NULL);
+    xTaskCreate(led_task, "led1_task", 128, (void *)&led1_blink_info, 1, NULL);
+    xTaskCreate(led_task, "led3_task", 128, (void *)&led3_blink_info, 1, NULL);
 
     vTaskDelete(NULL); // 别忘了退出任务
     taskEXIT_CRITICAL();
@@ -98,13 +101,13 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-    volatile int *p1 = (int *)malloc(64);
-    volatile int *p2 = (int *)malloc(128);
-    volatile int *p3 = (int *)malloc(128);
-    volatile int *p4 = (int *)malloc(128);
-    free(p1);
-    free(p3);
-    volatile int *p5 = (int *)malloc(100);
+    // volatile int *p1 = (int *)malloc(64);
+    // volatile int *p2 = (int *)malloc(128);
+    // volatile int *p3 = (int *)malloc(128);
+    // volatile int *p4 = (int *)malloc(128);
+    // free(p1);
+    // free(p3);
+    // volatile int *p5 = (int *)malloc(100);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
