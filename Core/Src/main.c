@@ -19,7 +19,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-#include "stm32f103xe.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -55,11 +54,8 @@ static const led_blink_info_typedef led1_blink_info = {
     .gpio_pin = led1_Pin,
     .period = 100,
 };
-static const led_blink_info_typedef led3_blink_info = {
-    .gpiox = led3_GPIO_Port,
-    .gpio_pin = led3_Pin,
-    .period = 300,
-};
+TaskHandle_t led1_task_handle = {0};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -71,7 +67,7 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void led_task(void *pvParameters){
+static void prv_led_task(void *pvParameters){
     led_blink_info_typedef *info = (led_blink_info_typedef *)pvParameters;
 
     while(1){
@@ -83,12 +79,28 @@ void led_task(void *pvParameters){
     vTaskDelete(NULL);
 }
 
+static void prv_contorl_task(void* pvParameters){
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    vTaskSuspend(led1_task_handle);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    vTaskResume(led1_task_handle);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    vTaskDelete(led1_task_handle);
+    
+    vTaskDelete(NULL);
+}
+
 void initial_task(void const* argument) {
     taskENTER_CRITICAL();
-    xTaskCreate(led_task, "led1_task", 128, (void *)&led1_blink_info, 1, NULL);
-    xTaskCreate(led_task, "led3_task", 128, (void *)&led3_blink_info, 1, NULL);
 
-    vTaskDelete(NULL); // 别忘了退出任务
+    xTaskCreate(prv_led_task, "led1_task", 128, (void *)&led1_blink_info, 1, &led1_task_handle);
+    xTaskCreate(prv_contorl_task, "contorl_task", 128, NULL, 2, NULL);
+
+    vTaskDelete(NULL);
+    
     taskEXIT_CRITICAL();
 }
 /* USER CODE END 0 */
@@ -101,13 +113,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-    // volatile int *p1 = (int *)malloc(64);
-    // volatile int *p2 = (int *)malloc(128);
-    // volatile int *p3 = (int *)malloc(128);
-    // volatile int *p4 = (int *)malloc(128);
-    // free(p1);
-    // free(p3);
-    // volatile int *p5 = (int *)malloc(100);
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

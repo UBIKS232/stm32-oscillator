@@ -27,10 +27,10 @@
             "svdFile": "D:/Coding/Keil5v41/packs/Keil/STM32F1xx_DFP/2.4.1/SVD/STM32F103xx.svd",
             "showDevDebugOutput": "raw",
             "gdbTarget": "localhost:50000",
-            "liveWatch": "true",
-            "postStartSessionCommands": [
-                "shell sleep 8"
-            ],
+            "liveWatch": {
+                "enabled": true,
+                "samplesPerSecond": 1
+            },
             "noDebug": false
         }
     ]

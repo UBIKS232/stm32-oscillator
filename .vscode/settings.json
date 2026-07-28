@@ -20,5 +20,5 @@
     ],
     "cmake.configureOnEdit": false,
     "cmake.pinnedCommands": [],
-    "cortex-debug.variableUseNaturalFormat": false
+    "cortex-debug.variableUseNaturalFormat": true
 }
