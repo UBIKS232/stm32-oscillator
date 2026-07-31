@@ -24,7 +24,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <string.h>
+#include "key_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,8 +45,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-const char* send1_str = "send1 running.\n";
-const char* send2_str = "send2 running.\n";
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,33 +57,14 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void print_string(const char* str) {
-    vTaskSuspendAll();
-
-    HAL_UART_Transmit(&huart1, (const uint8_t*)str, strlen(str), HAL_MAX_DELAY);
-
-    xTaskResumeAll();
-}
-
-void send_task(void* p_arg) {
-    const char* str = (const char*)p_arg;
-
-    for (int i = 0; i < 100; i++) {
-        print_string(str);
-    }
-
-    vTaskDelete(NULL);
-}
 
 void initial_task(void const* argument) {
     taskENTER_CRITICAL();
     
-    xTaskCreate(send_task, "send1", 128, (void*)send2_str, 1, NULL);
-    xTaskCreate(send_task, "send1", 128, (void*)send1_str, 1, NULL);
-
-    vTaskDelete(NULL);
+    xTaskCreate(key_task, "key_task", 256, NULL, 3, NULL);
 
     taskEXIT_CRITICAL();
+    vTaskDelete(NULL);
 }
 /* USER CODE END 0 */
 

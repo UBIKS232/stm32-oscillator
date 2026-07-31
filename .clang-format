@@ -1,5 +1,6 @@
 # .clang-format
 Language: Cpp
+SortIncludes: Never
 BasedOnStyle: Google
 
 # Indentation
