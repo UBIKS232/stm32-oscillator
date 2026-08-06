@@ -10,10 +10,18 @@ void initial_task(void const* argument) {
 
     xTaskCreate(buzzer_task, "buzzer_task", 64, NULL, 1, NULL);
     xTaskCreate(lcd_task, "lcd_task", 256, NULL, 1, NULL);
-    xTaskCreate(key_task, "key_task", 128, NULL, 3, NULL);
+    xTaskCreate(key_task, "key_task", 256, NULL, 3, NULL);
 
     taskEXIT_CRITICAL();
     vTaskDelete(NULL);
+}
+
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+    int i = 0;
+    while(1){
+        i=-i;
+    };
 }
 
 #endif  // _GENERAL_INCLUDE_H_
