@@ -2,7 +2,6 @@
 #include "main.h"
 #include "buzzer.h"
 #include "FreeRTOS.h"
-#include "task.h"
 #include "semphr.h"
 
 SemaphoreHandle_t buzzer_bsem = NULL;

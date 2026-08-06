@@ -1,24 +1,19 @@
 #ifndef _GENERAL_INCLUDE_H_
 #define _GENERAL_INCLUDE_H_
 
-extern void buzzer_init(void);
+#include "lcd_task.h"
+#include "buzzer_task.h"
+#include "key_task.h"
 
-extern void key_1_init(void);
-extern void key_2_init(void);
-extern void key_3_init(void);
-extern void key_4_init(void);
-extern void key_up_init(void);
-extern void key_down_init(void);
+void initial_task(void const* argument) {
+    taskENTER_CRITICAL();
 
-void init_hw(void) {
-    buzzer_init();
+    xTaskCreate(buzzer_task, "buzzer_task", 64, NULL, 1, NULL);
+    xTaskCreate(lcd_task, "lcd_task", 256, NULL, 1, NULL);
+    xTaskCreate(key_task, "key_task", 128, NULL, 3, NULL);
 
-    key_1_init();
-    key_2_init();
-    key_3_init();
-    key_4_init();
-    key_up_init();
-    key_down_init();
+    taskEXIT_CRITICAL();
+    vTaskDelete(NULL);
 }
 
 #endif  // _GENERAL_INCLUDE_H_

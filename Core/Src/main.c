@@ -19,14 +19,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "general_include.h"
-#include "key_task.h"
-#include "buzzer_task.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,15 +58,7 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void initial_task(void const* argument) {
-    taskENTER_CRITICAL();
-    
-    xTaskCreate(key_task, "key_task", 256, NULL, 3, NULL);
-    xTaskCreate(buzzer_task, "buzzer_task", 128, NULL, 3, NULL);
 
-    taskEXIT_CRITICAL();
-    vTaskDelete(NULL);
-}
 /* USER CODE END 0 */
 
 /**
@@ -100,8 +91,9 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-    init_hw();
+
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in cmsis_os2.c) */
