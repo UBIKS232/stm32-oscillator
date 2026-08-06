@@ -69,6 +69,8 @@ void Error_Handler(void);
 #define led_3_GPIO_Port GPIOC
 #define led_1_Pin GPIO_PIN_3
 #define led_1_GPIO_Port GPIOC
+#define buzzer_Pin GPIO_PIN_8
+#define buzzer_GPIO_Port GPIOC
 #define key_1_Pin GPIO_PIN_9
 #define key_1_GPIO_Port GPIOC
 #define key_2_Pin GPIO_PIN_8

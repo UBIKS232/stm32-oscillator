@@ -1,16 +1,17 @@
 #include "main.h"
 #include "key_task.h"
 #include "key.h"
-#include "key_hw.h"
-#include <string.h>
+// #include <string.h>
+
+#include "buzzer.h"
 
 static key_hw_context_t key_2_hw = {
     .gpiox = key_2_GPIO_Port, .gpio_pin = key_2_Pin, .active_low = 1U};
 
 static key_handle_t key_2_handle = {0};
 
-static uint8_t key_2_read_pin(void* context) {
-    key_hw_context_t* hw = (key_hw_context_t*)context;
+static uint8_t key_2_read_pin(key_hw_context_t* hw_context) {
+    key_hw_context_t* hw = (key_hw_context_t*)hw_context;
     GPIO_PinState state = HAL_GPIO_ReadPin(hw->gpiox, hw->gpio_pin);
 
     if (hw->active_low) {
@@ -22,9 +23,10 @@ static uint8_t key_2_read_pin(void* context) {
 
 static void key_2_callback(key_event_t event) {
     if (event == KEY_EVENT_CLICK) {
-        extern UART_HandleTypeDef huart1;
-        HAL_UART_Transmit(&huart1, (uint8_t*)"key_2 pressed.\n",
-                          strlen("key_2 pressed.\n"), HAL_MAX_DELAY);
+        // extern UART_HandleTypeDef huart1;
+        // HAL_UART_Transmit(&huart1, (uint8_t*)"key_2 pressed.\n",
+        //                   strlen("key_2 pressed.\n"), HAL_MAX_DELAY);
+        buzzer_beep();
     }
 }
 

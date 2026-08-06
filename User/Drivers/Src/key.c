@@ -2,9 +2,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-void key_init(key_handle_t* const handle, key_read_pin_t read_func, void* context){
+void key_init(key_handle_t* const handle, key_read_pin_t read_func,
+              key_hw_context_t* hw_context) {
     handle->read_func = read_func;
-    handle->context = context;
+    handle->hw_context = hw_context;
     handle->previous = 1U;
     handle->current = 1U;
     handle->pressed = 0U;
@@ -12,19 +13,20 @@ void key_init(key_handle_t* const handle, key_read_pin_t read_func, void* contex
 }
 
 // 依赖注入
-void key_register_callback(key_handle_t* const handle, key_callback_t callback){
-    if(handle)handle->callback = callback;
+void key_register_callback(key_handle_t* const handle,
+                           key_callback_t callback) {
+    if (handle) handle->callback = callback;
 }
 
-void key_scan(key_handle_t* const handle){
-    if((!handle) || (!handle->read_func)) return;
+void key_scan(key_handle_t* const handle) {
+    if ((!handle) || (!handle->read_func)) return;
 
-    handle->current = handle->read_func(handle->context);
+    handle->current = handle->read_func(handle->hw_context);
 
     // 上升沿
-    if((handle->previous == 0U) && (handle->current == 1U)){
+    if ((handle->previous == 0U) && (handle->current == 1U)) {
         handle->pressed = 1U;
-        if(handle->callback){
+        if (handle->callback) {
             handle->callback(KEY_EVENT_CLICK);
         }
     }
