@@ -49,21 +49,38 @@ void lcd_init(void) {
     lcd_send_cmd(0x29);
 }
 
+#include "iron_pickaxe_1.h"
+#include "iron_pickaxe_2.h"
+
 void lcd_show_image(void) {
-    // 设置图像的显示范围
-    // 设置列范围60~179
-    lcd_send_cmd(0x2a);
-    lcd_send_data((uint8_t[]){0x00, 0x3c, 0x00, 0xb3}, 4);
+    static uint8_t image_num = 0;
+    if (image_num == 0) {
+        image_num = 1;
+        // 设置图像的显示范围
+        // 设置高度范围
+        lcd_send_cmd(0x2a);
+        lcd_send_data((uint8_t[])IRON_PICKAXE_1_COL_ARRAY, 4);
 
-    // 设置行范围80~239
-    lcd_send_cmd(0x2b);
-    lcd_send_data((uint8_t[]){0x00, 0x50, 0x00, 0xef}, 4);
+        // 设置宽度范围
+        lcd_send_cmd(0x2b);
+        lcd_send_data((uint8_t[])IRON_PICKAXE_1_ROW_ARRAY, 4);
 
-    // 淡紫色色块的数据, gcc拓展写法
-    static const uint16_t lightPurpleBlock[160 * 120] = {[0 ... 160 * 120 - 1] =
-                                                             0xB0FF};
+        // 写内存命令
+        lcd_send_cmd(0x3c);
+        lcd_send_data((uint8_t*)&iron_pickaxe_1, IRON_PICKAXE_1_SIZE);
+    } else {
+        image_num = 0;
+        // 设置图像的显示范围
+        // 设置高度范围
+        lcd_send_cmd(0x2a);
+        lcd_send_data((uint8_t[])IRON_PICKAXE_2_COL_ARRAY, 4);
 
-    // 发送命令写内存命令0x3c
-    lcd_send_cmd(0x3C);
-    lcd_send_data((uint8_t*)lightPurpleBlock, 160 * 120 * 2);
+        // 设置宽度范围
+        lcd_send_cmd(0x2b);
+        lcd_send_data((uint8_t[])IRON_PICKAXE_2_ROW_ARRAY, 4);
+
+        // 写内存命令
+        lcd_send_cmd(0x3c);
+        lcd_send_data((uint8_t*)&iron_pickaxe_2, IRON_PICKAXE_2_SIZE);
+    }
 }

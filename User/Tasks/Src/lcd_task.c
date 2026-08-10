@@ -8,7 +8,7 @@ void lcd_task(void* p_arg) {
 
     while (1) {
         lcd_show_image();
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(300));
     }
 
     vTaskDelete(NULL);

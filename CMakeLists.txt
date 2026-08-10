@@ -51,10 +51,11 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
 
 # Add User sources
 file(GLOB USER_SOURCES
-    User/Tasks/Src/*.c
-    User/Tasks/Inc/*.h
     User/Drivers/Src/*.c
     User/Drivers/Inc/*.h
+    User/Tasks/Src/*.c
+    User/Tasks/Inc/*.h
+    User/Drivers/GUILib/*.h
 )
 
 # Add sources to executable
@@ -66,8 +67,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
-    User/Tasks/Inc/
     User/Drivers/Inc/
+    User/Tasks/Inc/
+    User/Drivers/GUILib
 )
 
 #
