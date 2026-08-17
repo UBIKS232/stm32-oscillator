@@ -1,10 +1,12 @@
 !.vscode/
+!./User/Drivers/GUI/bmp2c.exe
 
 \!ref/
 build/
 .reasonix/
+Middlewares/Third_party/Onemessage-4.4
 
-*.exe
+./*.exe
 *.elf
 *.bin
 *.out
