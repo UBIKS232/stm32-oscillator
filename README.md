@@ -434,3 +434,43 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 | SPI 时钟提高 | 检查 `hspi1.Init.BaudRatePrescaler`，在硬件允许范围内降低分频系数 |
 | 任务栈与优先级 | 确保 LCD 任务栈足够（建议 ≥ 512 words），并可临时提升优先级以完成连续发送 |
 | 复位时序 | 使用逻辑仪或示波器确认 `lcd_rst` 引脚在复位时产生 ≥ 1 ms 的低电平脉冲 |
+
+### 2.3 编译报错`ceil`相关内容
+
+```bash
+.../User/Drivers/GUI -lm  -llcd && cd ."
+.../arm-none-eabi/bin/ld.exe: .../User/Drivers/GUI\liblcd.a(lcd.o): in function `draw_char':
+lcd.c:(.text.draw_char+0x16e): undefined reference to `ceil'
+.../arm-none-eabi/15.2.1/../../../../arm-none-eabi/bin/ld.exe: (ceil): Unknown destination type (ARM/Thumb) in .../User/Drivers/GUI\liblcd.a(lcd.o)
+lcd.c:(.text.draw_char+0x16e): dangerous relocation: unsupported relocation
+Memory region         Used Size  Region Size  %age Used
+             RAM:       19136 B        48 KB     38.93%
+           FLASH:       47108 B       256 KB     17.97%
+collect2.exe: error: ld returned 1 exit status
+ninja: build stopped: subcommand failed.
+```
+
+原因分析: 
+
+liblcd.a中使用了libm中的`ceil`, 但是包含`ceil`的libm先于liblcd解析: `-lm  -llcd`, 因此`ceil`标志被忽略, 导致报错.
+
+修改方案: 
+
+将`CMakeLists.text`中引用link库的部分添加`m`, 强制规定解析顺序即可: 
+
+```cmake
+# Add linked libraries
+target_link_libraries(${CMAKE_PROJECT_NAME}
+    stm32cubemx
+    # Add user defined libraries
+    lcd
+    m
+    # OneMessage
+)
+```
+
+### 2.4 ST7789的注意点
+
+ST7789要求先发RGB565数据的高字节, 再发低字节, 因此u16的颜色数据在强转为u8发送前, 要先人为
+更改u16色彩的前后字节顺序.
+

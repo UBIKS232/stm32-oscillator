@@ -44,6 +44,23 @@ add_subdirectory(cmake/stm32cubemx)
 
 # ------------------------------------------------------------------------------
 
+# Add User sources
+file(GLOB USER_SOURCES
+    User/Board/*.c
+    User/Drivers/*.c
+    User/Tasks/*.c
+)
+
+# Add User includes
+set(USER_INCLUDES
+    User/Config/
+    User/Drivers/
+    User/Drivers/GUI/
+    User/Tasks/
+)
+
+# ------------------------------------------------------------------------------
+
 # Add OneMessage (3rd-party publish-subscribe message framework)
 # add_subdirectory(Middlewares/Third_Party/OneMessage-4.4/src om.out)
 
@@ -66,12 +83,15 @@ add_subdirectory(cmake/stm32cubemx)
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined library search paths
+    User/Drivers/GUI
 )
 
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
     # Add user defined libraries
+    lcd
+    m
     # OneMessage
 )
 
@@ -83,21 +103,6 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
 )
 
 # ------------------------------------------------------------------------------
-
-# Add User sources
-file(GLOB USER_SOURCES
-    User/Board/*.c
-    User/Drivers/*.c
-    User/Tasks/*.c
-)
-
-# Add User includes
-set(USER_INCLUDES
-    User/Config/
-    User/Drivers/
-    User/Drivers/GUI/
-    User/Tasks/
-)
 
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
