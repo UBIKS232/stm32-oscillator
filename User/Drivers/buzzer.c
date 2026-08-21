@@ -3,11 +3,11 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-SemaphoreHandle_t buzzer_sem = NULL;  // - tasks
+SemaphoreHandle_t buzzer_sem = NULL;  // - buzzer_task
 
 void buzzer_init(void) {
     if (buzzer_sem == NULL) {
-        buzzer_sem = xSemaphoreCreateBinary();
+        buzzer_sem = xSemaphoreCreateCounting(5, 0);
     }
 
     if (!buzzer_sem) return;

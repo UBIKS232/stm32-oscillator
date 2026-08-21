@@ -25,7 +25,8 @@
             "preLaunchTask": "Build Debug",
             "runToEntryPoint": "main",
             "svdFile": "D:/Coding/Keil5v41/packs/Keil/STM32F1xx_DFP/2.4.1/SVD/STM32F103xx.svd",
-            "showDevDebugOutput": "raw",
+            // "showDevDebugOutput": "raw",
+            "showDevDebugOutput": "false",
             "gdbTarget": "localhost:50000",
             "liveWatch": {
                 "enabled": true,

@@ -62,7 +62,7 @@ void lcd_init(void) {
     // 开启背光
     lcd_bl_control(1U);
 
-    // 关闭反向显示(对某些变种型号的ST7789)
+    // 关闭反向显示(对某些变种型号的ST7789控制的屏幕)
     // INVOFF (20h): Display Inversion Off .
     lcd_send_cmd(0x20);
 
