@@ -5,7 +5,7 @@
 
 #define LED_UPDATE_PERIOD_MS 10
 
-void led_task(void* p_arg) {
+void led_task(void* pv_arg) {
     led_init();
 
     led_set_mode(LED_1, LED_MODE_ON, 0);

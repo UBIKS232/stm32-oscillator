@@ -8,7 +8,7 @@ extern SemaphoreHandle_t buzzer_sem;
 
 #define BUZZER_UPDATE_PERIOD_MS 100
 
-void buzzer_task(void* p_arg) {
+void buzzer_task(void* pv_arg) {
     buzzer_init();
 
     while (1) {

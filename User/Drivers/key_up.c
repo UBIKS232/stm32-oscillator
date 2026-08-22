@@ -1,16 +1,16 @@
-#include "main.h"
 #include "key.h"
 
+#include "my_uart.h"
 #include "buzzer.h"
 
 extern key_hw_context_t key_hws[KEY_NUM_COUNT];
 extern key_handle_t key_handles[KEY_NUM_COUNT];
 
+const char* key_up_msg = "key_up_pressed\n";
+
 static void key_up_callback(key_event_t event) {
     if (event == KEY_EVENT_CLICK) {
-        // extern UART_HandleTypeDef huart1;
-        // HAL_UART_Transmit(&huart1, (uint8_t*)"key_up pressed.\n",
-        //                   strlen("key_up pressed.\n"), HAL_MAX_DELAY);
+        uart_action(&key_up_msg);
         buzzer_beep();
     }
 }

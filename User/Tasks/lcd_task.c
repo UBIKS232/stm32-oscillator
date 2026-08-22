@@ -8,7 +8,7 @@
 
 extern SemaphoreHandle_t lcd_sem;
 
-void lcd_task(void* p_arg) {
+void lcd_task(void* pv_arg) {
     lcd_init();
 
     while (1) {

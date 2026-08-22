@@ -15,7 +15,7 @@ extern void key_4_init(void);
 extern void key_up_init(void);
 extern void key_down_init(void);
 
-void key_task(void* p_arg) {
+void key_task(void* pv_arg) {
     key_1_init();
     key_2_init();
     key_3_init();

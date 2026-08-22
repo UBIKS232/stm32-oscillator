@@ -474,3 +474,48 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 ST7789要求先发RGB565数据的高字节, 再发低字节, 因此u16的颜色数据在强转为u8发送前, 要先人为
 更改u16色彩的前后字节顺序.
 
+### 2.5 队列传输指针与内容混淆导致 HardFault（UART 任务）
+
+**现象**  
+- 按下 `KEY_UP` 键后，系统进入 HardFault，定位到 `uart_send` 中的 `strlen(pc_string)` 处。  
+- 调试发现，进入 `strlen` 时参数 `pc_string` 的值是一个非法地址（如 `0x5F79656B`），而非预期的字符串首地址。
+
+**调试过程与关键观察**  
+1. **发送端追踪**  
+   - `key_up_callback` 中调用 `uart_action(&key_up_msg[0])`，传入的地址为 `0x20000040`（数组 `key_up_msg` 的首地址）。  
+   - 进入 `xQueueSend` 内部，`pvItemToQueue` 保持 `0x20000040`，`uxItemSize` 为 4，执行 `memcpy(队列存储区, pvItemToQueue, 4)`。
+
+2. **队列存储内容检查**  
+   - 在发送端 `memcpy` 后，查看队列存储区（`pxQueue->pcWriteTo`），前 4 个字节为 `6B 65 79 5F`，即 ASCII 码 `'k'`、`'e'`、`'y'`、`'_'`。  
+   - 这说明队列存储的是**字符串内容的前 4 个字节**，而非指针值。
+
+3. **接收端追踪**  
+   - `uart_task` 调用 `xQueueReceive(uart_que, &pc_msg, portMAX_DELAY)`，接收成功后 `pc_msg` 的值变为 `0x5F79656B`（即 `'k'`、`'e'`、`'y'`、`'_'` 拼接成的小端整数）。  
+   - 该地址无效，导致后续 `strlen` 访问时触发 HardFault。
+
+**根本原因**  
+- `xQueueSend` 的第二个参数是“指向待复制数据的指针”，复制长度由 `uxItemSize` 决定。  
+- 调用 `uart_action(&key_up_msg[0])` 时，传入的是数组首地址，`xQueueSend` 将该地址视为数据来源，复制了**该地址起始的 4 个字节（即字符串内容）**。  
+- 接收端期望收到的是指针值（字符串地址），但实际收到的是字符串内容本身，错误地将其解释为指针地址，导致非法访问。
+
+**解决方案**  
+- 修改数据结构：将全局消息声明为**指针变量**而非数组，使其拥有独立的存储空间，存储字符串常量的地址。  
+  ```c
+  // 原代码（错误）：
+  char key_up_msg[] = "key_up_pressed\n";
+  // 修改为：
+  const char* key_up_msg = "key_up_pressed\n";
+  ```
+- 修改调用方式：`uart_action(&key_up_msg);` 传入指针变量的地址，队列复制该指针变量内的值（即字符串的地址），而非字符串内容。  
+- 相应调整 `uart_action` 函数原型为 `void uart_action(const char** ppc_msg)`，内部调用 `xQueueSend(uart_que, ppc_msg, portMAX_DELAY)`。
+
+**验证方法**  
+- 在发送端 `memcpy` 后检查队列存储区，前 4 字节应为字符串的 Flash 地址（如 `0x0800ABCD`）。  
+- 在接收端 `xQueueReceive` 后检查 `pc_msg` 的值，应为同一有效地址，`strlen` 可正常访问。  
+- 运行程序，按 `KEY_UP` 后串口正常打印消息，无 HardFault。
+
+**经验总结**  
+- 使用 FreeRTOS 队列传递指针时，**必须明确区分“传递指针本身”与“传递指针指向的内容”**。  
+- 若要传递指针值，需将指针变量的地址作为源数据传入，并确保 `uxItemSize` 等于指针大小（通常为 4）。  
+- 全局数组名并非变量，其地址即数组首地址，`&array` 在数值上与 `array` 相同，但类型不同；使用指针变量可避免混淆。  
+- 调试时，通过检查队列存储区的十六进制内容，可直观判断复制的是指针值还是内容值，这是排查此类问题的有效手段。
