@@ -68,12 +68,15 @@ void lcd_init(void) {
 
     // - 特殊设置 -
 
-    // test
-    LCD_SetBrush(0x000000);
+    LCD_SetBrush(0xffffff);
     LCD_Clear();
-    LCD_SetPen(0x00ff00);
-    LCD_SetCursor(120, 120);
-    LCD_PrintString("Hello lcd!");
+
+    // test
+    // LCD_SetBrush(0x000000);
+    // LCD_Clear();
+    // LCD_SetPen(0x00ff00);
+    // LCD_SetCursor(120, 120);
+    // LCD_PrintString("Hello lcd!");
 }
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef* hspi) {

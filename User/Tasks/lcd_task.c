@@ -4,15 +4,19 @@
 #include "task.h"
 #include "semphr.h"
 
-#define LCD_UPDATE_PERIOD_MS 300
+#include "dmm.h"
+#include "label_dmm.h"
+
+#define LCD_UPDATE_PERIOD_MS 100
 
 extern SemaphoreHandle_t lcd_sem;
 
 void lcd_task(void* pv_arg) {
+    dmm_init();
     lcd_init();
 
     while (1) {
-        
+        label_cmm_repaint();
         vTaskDelay(pdMS_TO_TICKS(LCD_UPDATE_PERIOD_MS));
     }
 

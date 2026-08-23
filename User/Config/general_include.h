@@ -4,6 +4,8 @@
 #define TEST 0
 
 #if (!TEST)
+#include "dmm.h"
+
 #include "buzzer_task.h"
 #include "led_task.h"
 #include "lcd_task.h"

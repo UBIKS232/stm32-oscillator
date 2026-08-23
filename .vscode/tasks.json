@@ -27,12 +27,18 @@
             "type": "shell",
             "command": "openocd",
             "args": [
-                "-f", "interface/cmsis-dap.cfg",
-                "-f", "target/stm32f1x.cfg",
-                "-c", "reset_config none",
-                "-c", "cortex_m reset_config sysresetreq",
-                "-c", "adapter speed 1000",
-                "-c", "program ./build/Debug/ttsy-oscillator.elf verify reset exit"
+                "-f",
+                "interface/cmsis-dap.cfg",
+                "-f",
+                "target/stm32f1x.cfg",
+                "-c",
+                "reset_config none",
+                "-c",
+                "cortex_m reset_config sysresetreq",
+                "-c",
+                "adapter speed 1000",
+                "-c",
+                "program ./build/Debug/ttsy-oscillator.elf verify reset exit"
             ],
             "group": {
                 "kind": "test",
@@ -40,6 +46,34 @@
             },
             "problemMatcher": [],
             "detail": "BuidAll->Flash->AutoReset"
+        },
+        {
+            "label": "Warmup GDB",
+            "type": "shell",
+            "command": "arm-none-eabi-gdb",
+            "args": [
+                "--batch",
+                "-ex",
+                "file ./build/Debug/ttsy-oscillator.elf",
+                "-ex",
+                "quit"
+            ],
+            "presentation": {
+                "echo": true, // 显示执行的命令
+                "reveal": "always", // 任务运行时始终显示终端面板
+                "focus": false, // 不要抢占焦点，保持后台
+                "panel": "shared", // 与其它任务共享同一个终端面板
+                "clear": true // 清除之前内容
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Debug with gdb warmup",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "Build Debug",
+                "Warmup GDB"
+            ]
         }
     ]
 }

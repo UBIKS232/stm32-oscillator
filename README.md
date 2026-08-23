@@ -231,6 +231,66 @@ build/
 
 ---
 
+### g. 调试启动超时优化
+
+**问题现象**  
+首次按 `Ctrl+F5` 启动调试时，cortex-debug 插件弹出错误提示：
+
+```
+Failed to generate gdb commands: Error: Could not start gdb, no response from gdb
+```
+
+关闭错误窗口后再次启动调试，则能正常进入调试状态。
+
+**原因分析**  
+`arm-none-eabi-gdb` 加载包含完整调试信息的 ELF 文件（尤其是大工程）所需时间较长，而 cortex-debug 插件内部等待 GDB 响应的时间固定且不可配置，导致首次启动时超时。第二次启动时，操作系统已将 ELF 文件内容缓存到内存，加载速度显著提升，因此成功。
+
+**解决方案**  
+在正式调试前，通过 `preLaunchTask` 执行一次 GDB 预热任务，提前加载 ELF 符号表，使文件进入缓存，从而缩短正式启动时的加载时间。
+
+**具体配置步骤**
+
+1. 修改 `.vscode/launch.json`，将 `preLaunchTask` 指向组合任务：
+   ```json
+   "preLaunchTask": "PreLaunch with Warmup"
+   ```
+
+2. 在 `.vscode/tasks.json` 中新增以下两个任务（置于已有 `"Build Debug"` 任务之后）：
+
+   ```json
+   {
+       "label": "Warmup GDB",
+       "type": "shell",
+       "command": "arm-none-eabi-gdb",
+       "args": [
+           "--batch",
+           "-ex", "set verbose on",
+           "-ex", "file ${workspaceFolder}/build/Debug/ttsy-oscillator.elf",
+           "-ex", "quit"
+       ],
+       "presentation": {
+           "echo": true,
+           "reveal": "always",
+           "focus": false,
+           "panel": "shared",
+           "clear": false
+       },
+       "problemMatcher": []
+   },
+   {
+       "label": "PreLaunch with Warmup",
+       "dependsOrder": "sequence",
+       "dependsOn": ["Build Debug", "Warmup GDB"]
+   }
+   ```
+
+   - `Warmup GDB` 任务以 `--batch` 模式运行 GDB，加载指定的 ELF 文件后立即退出；`set verbose on` 会输出符号加载过程的详细信息。  
+   - `PreLaunch with Warmup` 组合任务按顺序执行构建和预热，确保在调试启动前完成所有准备工作。
+
+**效果**  
+预热任务执行时，终端面板会自动弹出并显示 GDB 加载符号的进度（例如 `Reading symbols from ...`）。预热完成后，正式调试启动时 GDB 因文件已在缓存中而快速响应，不再出现超时报错。
+
+---
 
 ### 1.3 `git push`问题
 
@@ -389,6 +449,8 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 - 开启 `configCHECK_FOR_STACK_OVERFLOW = 2` 是调试期最有效的手段, 可快速定位栈溢出问题. 
 - 生产环境中可关闭检测, 但务必保证各任务栈通过高水位测试留有足够余量. 
 
+---
+
 ### 2.2 LCD 显示异常：绘制缓慢、逐列扫描、旧图像残留
 
 **现象描述**  
@@ -435,6 +497,8 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 | 任务栈与优先级 | 确保 LCD 任务栈足够（建议 ≥ 512 words），并可临时提升优先级以完成连续发送 |
 | 复位时序 | 使用逻辑仪或示波器确认 `lcd_rst` 引脚在复位时产生 ≥ 1 ms 的低电平脉冲 |
 
+---
+
 ### 2.3 编译报错`ceil`相关内容
 
 ```bash
@@ -469,53 +533,365 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 )
 ```
 
+---
+
 ### 2.4 ST7789的注意点
 
 ST7789要求先发RGB565数据的高字节, 再发低字节, 因此u16的颜色数据在强转为u8发送前, 要先人为
 更改u16色彩的前后字节顺序.
 
+---
+
 ### 2.5 队列传输指针与内容混淆导致 HardFault（UART 任务）
 
-**现象**  
-- 按下 `KEY_UP` 键后，系统进入 HardFault，定位到 `uart_send` 中的 `strlen(pc_string)` 处。  
-- 调试发现，进入 `strlen` 时参数 `pc_string` 的值是一个非法地址（如 `0x5F79656B`），而非预期的字符串首地址。
+**现象描述**  
+拨动 `KEY_UP` 按键后，系统立即进入 HardFault。通过调试器追踪，发现故障发生在 `uart_send` 函数调用 `strlen(pc_string)` 时，此时 `pc_string` 的值是一个非法地址（如 `0x5F79656B`），CPU 访问该地址触发总线错误。系统其他任务均停止响应。
 
-**调试过程与关键观察**  
-1. **发送端追踪**  
-   - `key_up_callback` 中调用 `uart_action(&key_up_msg[0])`，传入的地址为 `0x20000040`（数组 `key_up_msg` 的首地址）。  
-   - 进入 `xQueueSend` 内部，`pvItemToQueue` 保持 `0x20000040`，`uxItemSize` 为 4，执行 `memcpy(队列存储区, pvItemToQueue, 4)`。
+---
 
-2. **队列存储内容检查**  
-   - 在发送端 `memcpy` 后，查看队列存储区（`pxQueue->pcWriteTo`），前 4 个字节为 `6B 65 79 5F`，即 ASCII 码 `'k'`、`'e'`、`'y'`、`'_'`。  
-   - 这说明队列存储的是**字符串内容的前 4 个字节**，而非指针值。
+**调试过程与关键观察**
 
-3. **接收端追踪**  
-   - `uart_task` 调用 `xQueueReceive(uart_que, &pc_msg, portMAX_DELAY)`，接收成功后 `pc_msg` 的值变为 `0x5F79656B`（即 `'k'`、`'e'`、`'y'`、`'_'` 拼接成的小端整数）。  
-   - 该地址无效，导致后续 `strlen` 访问时触发 HardFault。
+1. **初步定位故障点**  
+   在 `uart_send` 入口处设置断点，观察传入参数 `pc_string`。发现其值为 `0x5F79656B`，显然不是预期字符串 `"key_up_pressed\n"` 的地址（预期应为 `0x20000040` 或 Flash 中的地址）。这说明在调用 `uart_send` 之前，指针值已被破坏。
 
-**根本原因**  
-- `xQueueSend` 的第二个参数是“指向待复制数据的指针”，复制长度由 `uxItemSize` 决定。  
-- 调用 `uart_action(&key_up_msg[0])` 时，传入的是数组首地址，`xQueueSend` 将该地址视为数据来源，复制了**该地址起始的 4 个字节（即字符串内容）**。  
-- 接收端期望收到的是指针值（字符串地址），但实际收到的是字符串内容本身，错误地将其解释为指针地址，导致非法访问。
+2. **回溯发送端数据流**  
+   - 在 `key_up_callback` 中设置断点，观察调用 `uart_action(&key_up_msg[0])` 时传入的参数：  
+     ```c
+     char key_up_msg[] = "key_up_pressed\n";  // 全局数组
+     ```  
+     此时 `&key_up_msg[0]` 的值为 `0x20000040`，指向字符串首地址，数据正确。  
+   - 进入 `uart_action` 函数，其实现为：  
+     ```c
+     void uart_action(const char* pc_msg) {
+         xQueueSend(uart_que, pc_msg, portMAX_DELAY);
+     }
+     ```  
+     观察形参 `pc_msg` 的值，仍为 `0x20000040`，数据未变。  
+   - 继续跟踪进入 `xQueueGenericSend` 内部。在调用 `prvCopyDataToQueue` 前，观察 `pvItemToQueue` 参数，仍然为 `0x20000040`。
+
+3. **检查队列复制操作**  
+   `prvCopyDataToQueue` 内部执行关键复制操作：  
+   ```c
+   memcpy(pxQueue->pcWriteTo, pvItemToQueue, pxQueue->uxItemSize);
+   ```  
+   此时各参数为：  
+   - `pvItemToQueue` = `0x20000040`（待复制数据的来源地址）  
+   - `pxQueue->uxItemSize` = `0x4`（队列项大小为 4 字节）  
+   - `pxQueue->pcWriteTo` = 队列内部存储区地址（如 `0x200014E8`）
+
+   **此处为关键分歧点**：我们预期的行为是“将指针值 `0x20000040` 复制到队列”，但实际执行时，`memcpy` 从地址 `0x20000040` 处读取数据，而该地址正是字符串 `"key_up_pressed\n"` 的起始位置，因此复制了前 4 个字节：`'k'`、`'e'`、`'y'`、`'_'`，即十六进制 `0x6B 0x65 0x79 0x5F`。  
+   在 `memcpy` 执行后查看队列存储区 `pxQueue->pcWriteTo` 的内容，确认为 `6B 65 79 5F`，验证了这一判断。
+
+4. **追踪接收端数据恢复**  
+   `uart_task` 中的接收逻辑为：  
+   ```c
+   char* pc_msg = NULL;
+   if (xQueueReceive(uart_que, &pc_msg, portMAX_DELAY) == pdPASS) {
+       uart_send(pc_msg);
+   }
+   ```  
+   在 `xQueueReceive` 内部，关键操作为：  
+   ```c
+   memcpy(pvBuffer, pxQueue->u.xQueue.pcReadFrom, pxQueue->uxItemSize);
+   ```  
+   此时各参数为：  
+   - `pvBuffer` = `&pc_msg`（指针变量本身的地址，如 `0x20000A6C`）  
+   - `pxQueue->u.xQueue.pcReadFrom` = 队列读取位置（即之前写入的 `0x200014E8`）  
+   - `pxQueue->uxItemSize` = `0x4`  
+
+   执行 `memcpy` 后，将队列存储区中的 `6B 65 79 5F` 复制到 `pc_msg` 变量中。因此在 `xQueueReceive` 返回后，`pc_msg` 的值变为 `0x5F79656B`（小端序下 `6B 65 79 5F` 组成的 32 位整数）。随后调用 `uart_send(pc_msg)`，将该值作为地址传入 `strlen`，触发 HardFault。
+
+5. **辅助观察：断点行为的说明**  
+   在调试过程中，尝试在 `xQueueReceive` 内部设置断点时，调试器有时会显示异常或无法正常查看 `pc_msg` 的值。这是因为断点处 `memcpy` 刚执行完毕，`pc_msg` 已被赋值为 `0x5F79656B`，调试器在解析该地址时会尝试读取无效内存区域，导致变量显示异常，但这不影响程序运行逻辑，HardFault 发生在断点取消后继续执行到 `strlen` 时才触发。
+
+---
+
+**根本原因分析**  
+
+问题根源在于对 FreeRTOS 队列 API 的语义理解偏差：
+
+- `xQueueSend` 的第二个参数 `pvItemToQueue` 是一个**指向待复制数据的指针**，复制长度由 `uxItemSize` 决定。该函数会将 `pvItemToQueue` 所指向的内存区域中的内容复制到队列存储区，而非复制指针本身。  
+- 原始代码中，`uart_action` 直接传入数组首地址 `&key_up_msg[0]`（即 `0x20000040`）。`xQueueSend` 将该地址视为数据来源，复制了该地址起始的 4 个字节（字符串内容），而非地址值本身。  
+- 接收端期望从队列中恢复出一个有效的指针值，但实际拿到的是字符串内容片段，被错误地解释为指针地址，导致非法访问。
+
+从类型系统角度看，`key_up_msg[]` 是一个数组，其名称退化为首地址，`&key_up_msg[0]` 在数值上等于首地址，但它指向的是字符数据而非指针变量。因此“取地址”操作实际获取的是“字符数据的地址”，而非“存储指针的变量的地址”。
+
+---
 
 **解决方案**  
-- 修改数据结构：将全局消息声明为**指针变量**而非数组，使其拥有独立的存储空间，存储字符串常量的地址。  
-  ```c
-  // 原代码（错误）：
-  char key_up_msg[] = "key_up_pressed\n";
-  // 修改为：
-  const char* key_up_msg = "key_up_pressed\n";
-  ```
-- 修改调用方式：`uart_action(&key_up_msg);` 传入指针变量的地址，队列复制该指针变量内的值（即字符串的地址），而非字符串内容。  
-- 相应调整 `uart_action` 函数原型为 `void uart_action(const char** ppc_msg)`，内部调用 `xQueueSend(uart_que, ppc_msg, portMAX_DELAY)`。
+
+将消息字符串声明为**全局指针变量**，使其拥有独立的存储空间来存放字符串地址，而非直接存储字符串内容：
+
+```c
+// 修改前（错误）
+char key_up_msg[] = "key_up_pressed\n";
+
+// 修改后（正确）
+const char* key_up_msg = "key_up_pressed\n";
+```
+
+同时修改 `uart_action` 的接口，使其接受**指针的指针**，明确表达“传递指针变量地址”的意图：
+
+```c
+// .h 文件中
+void uart_action(const char** pc_msg);
+
+// .c 文件中
+void uart_action(const char** pc_msg) {
+    xQueueSend(uart_que, pc_msg, portMAX_DELAY);
+}
+```
+
+调用处相应修改为：
+
+```c
+static void key_up_callback(key_event_t event) {
+    if (event == KEY_EVENT_CLICK) {
+        uart_action(&key_up_msg);  // 传入指针变量的地址
+        buzzer_beep();
+    }
+}
+```
+
+---
 
 **验证方法**  
-- 在发送端 `memcpy` 后检查队列存储区，前 4 字节应为字符串的 Flash 地址（如 `0x0800ABCD`）。  
-- 在接收端 `xQueueReceive` 后检查 `pc_msg` 的值，应为同一有效地址，`strlen` 可正常访问。  
-- 运行程序，按 `KEY_UP` 后串口正常打印消息，无 HardFault。
 
-**经验总结**  
-- 使用 FreeRTOS 队列传递指针时，**必须明确区分“传递指针本身”与“传递指针指向的内容”**。  
-- 若要传递指针值，需将指针变量的地址作为源数据传入，并确保 `uxItemSize` 等于指针大小（通常为 4）。  
-- 全局数组名并非变量，其地址即数组首地址，`&array` 在数值上与 `array` 相同，但类型不同；使用指针变量可避免混淆。  
-- 调试时，通过检查队列存储区的十六进制内容，可直观判断复制的是指针值还是内容值，这是排查此类问题的有效手段。
+修复后，在调试器中再次跟踪数据流：
+
+1. 发送端：观察 `pvItemToQueue` 的值，此时应为 `&key_up_msg` 的地址（如 `0x20000050`，即指针变量本身的地址）。  
+2. `memcpy` 执行后查看队列存储区 `pxQueue->pcWriteTo` 的内容，应为 `0x0800ABCD`（字符串常量在 Flash 中的地址），而非 ASCII 字符。  
+3. 接收端：`xQueueReceive` 返回后，`pc_msg` 的值恢复为 `0x0800ABCD`，指向 Flash 中的字符串常量。  
+4. `uart_send` 调用 `strlen(pc_string)` 时正常访问 Flash 区域，串口输出 `"key_up_pressed\n"`，HardFault 不再出现。
+
+---
+
+**经验总结与扩展**  
+
+- 使用 FreeRTOS 队列传递指针数据时，**必须明确区分“传递指针值”与“传递指针指向的内容”**。若需要传递指针值（如字符串地址），应将指针变量的地址作为源数据传入，而非数组首地址。  
+- 全局数组名并非变量，它没有独立的存储空间用于存储地址值，`&array` 在数值上等同于 `array`，但类型为数组指针，可能引起语义混淆。使用显式的指针变量可避免此类问题。  
+- 调试此类数据传递问题时，**查看队列存储区的十六进制原始内容**是最直接有效的方法——它能清晰反映 `memcpy` 实际复制了什么，而非依赖变量窗口的字符串显示。  
+- 对于其他按键（如 `KEY_1`、`KEY_DOWN` 等），若使用相同的 `uart_action` 模式，需同步修改为指针变量方案，保持一致性。  
+- 该问题与硬件无关，纯属软件逻辑层面的指针/数组语义混淆，在嵌入式 RTOS 开发中具有一定典型性。
+
+---
+
+### 2.6 ADC 注入组中断仅触发一次的调试过程
+
+**问题现象**
+
+在实现数字万用表功能时，ADC1 的注入组配置为 TIM2 TRGO 硬件触发，中断回调 `HAL_ADCEx_InjectedConvCpltCallback` 始终无法进入。通过 GDB 调试发现断点完全不命中。
+
+**初步排查：回调函数名误写为常规组版本（如 `HAL_ADC_ConvCpltCallback`），导致首次中断也无法进入。修正为 `HAL_ADCEx_InjectedConvCpltCallback` 后方可进入第一次中断。**
+
+进入第一次中断后，继续运行时发现 TIM2 后续的 TRGO 信号无法再次触发中断。暂停程序，通过 GDB 观察 ADC 状态寄存器：
+
+```gdb
+p/x ADC1->CR1
+```
+
+发现 `CR1` 寄存器的值为 `0x00000000`，即 `JEOCIE`（注入组转换结束中断使能位）为 0，导致后续中断被硬件屏蔽。
+
+---
+
+**调试过程**
+
+**第一步：定位中断使能位被清零**
+
+在 `HAL_ADCEx_InjectedConvCpltCallback` 入口处设置断点，首次进入时观察 `ADC1->CR1`：
+
+```gdb
+p/x ADC1->CR1
+# 输出: 0x00000020  (JEOCIE 位为 1，中断使能正常)
+```
+
+让程序继续运行，等待 TIM2 的下一次触发，但断点不再命中。暂停程序再次查看：
+
+```gdb
+p/x ADC1->CR1
+# 输出: 0x00000000  (JEOCIE 位被清零)
+```
+
+**结论**：`JEOCIE` 在第一次中断处理过程中被某处代码主动清除。
+
+---
+
+**第二步：追踪 HAL 库源码**
+
+中断向量入口为 `ADC1_2_IRQHandler`，其调用链为：
+
+```
+ADC1_2_IRQHandler()
+  └── HAL_ADC_IRQHandler(&hadc1)
+        ├── 处理注入组转换完成标志 (JEOC)
+        ├── 条件判断是否禁用 JEOCIE
+        │   └── if (...) { __HAL_ADC_DISABLE_IT(hadc, ADC_IT_JEOC); }
+        └── HAL_ADCEx_InjectedConvCpltCallback(hadc)
+```
+
+关键代码位于 `stm32f1xx_hal_adc.c` 中（约 1862 行）：
+
+```c
+/* Determine whether any further conversion upcoming on group injected */
+if (ADC_IS_SOFTWARE_START_INJECTED(hadc)                     ||
+    (HAL_IS_BIT_CLR(hadc->Instance->CR1, ADC_CR1_JAUTO) &&
+     (ADC_IS_SOFTWARE_START_REGULAR(hadc)        &&
+      (hadc->Init.ContinuousConvMode == DISABLE)   )        )   )
+{
+    /* Disable ADC end of conversion interrupt on group injected */
+    __HAL_ADC_DISABLE_IT(hadc, ADC_IT_JEOC);
+
+    /* Set ADC state */
+    CLEAR_BIT(hadc->State, HAL_ADC_STATE_INJ_BUSY);
+
+    if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_REG_BUSY))
+    {
+        SET_BIT(hadc->State, HAL_ADC_STATE_READY);
+    }
+}
+```
+
+---
+
+**第三步：分析条件判断逻辑**
+
+需要理解两个关键宏的定义：
+
+| 宏 | 含义 | 判定条件 |
+|---|---|---|
+| `ADC_IS_SOFTWARE_START_INJECTED(hadc)` | 注入组是否为软件触发 | `CR2` 的 `JEXTTRIG` 位为 0 |
+| `ADC_IS_SOFTWARE_START_REGULAR(hadc)` | 常规组是否为软件触发 | `CR2` 的 `EXTTRIG` 位为 0 |
+
+**用户的配置**（`CubeMX` 中常规组保持默认，仅配置注入组）：
+
+| 条件项 | 实际值 | 结果 |
+|---|---|---|
+| `ADC_IS_SOFTWARE_START_INJECTED` | TIM2 TRGO 触发，`JEXTTRIG=1` | **FALSE** |
+| `HAL_IS_BIT_CLR(CR1, ADC_CR1_JAUTO)` | 未开启自动注入，`JAUTO=0` | **TRUE** |
+| `ADC_IS_SOFTWARE_START_REGULAR` | 常规组默认软件触发，`EXTTRIG=0` | **TRUE** |
+| `ContinuousConvMode == DISABLE` | 常规组非连续模式 | **TRUE** |
+
+代入判断表达式：
+
+```c
+if (FALSE || (TRUE && (TRUE && TRUE)))
+=> if (FALSE || TRUE)
+=> if (TRUE)   // 条件成立，执行清除 JEOCIE
+```
+
+**结论**：HAL 库判定当前为“单次软件触发模式”，转换完成后主动关闭注入组中断。
+
+---
+
+**第四步：对比教程配置的差异**
+
+教程在第 5 步的注释中明确指出：
+
+> **由于 CubeMX 本身存在 BUG，在单独使用注入序列的时候常规序列不得选择软件触发。**
+
+教程的做法是将常规组的触发方式从默认的 `Software` 改为**外部触发**（如 Timer 3 TRGO），或开启 `Continuous Conversion Mode`。此时：
+
+| 条件项 | 教程配置后的值 | 结果 |
+|---|---|---|
+| `ADC_IS_SOFTWARE_START_INJECTED` | `JEXTTRIG=1` | **FALSE** |
+| `HAL_IS_BIT_CLR(CR1, ADC_CR1_JAUTO)` | `JAUTO=0` | **TRUE** |
+| `ADC_IS_SOFTWARE_START_REGULAR` | `EXTTRIG=1`（硬件触发） | **FALSE** |
+| `ContinuousConvMode == DISABLE` | 无关（短路求值） | — |
+
+代入表达式：
+
+```c
+if (FALSE || (TRUE && (FALSE && ...)))
+=> if (FALSE || FALSE)
+=> if (FALSE)   // 条件不成立，JEOCIE 被保留
+```
+
+**结论**：教程通过“欺骗”HAL 库的条件判断，使注入组中断得以持续触发。这是一种依赖 HAL 库内部实现细节的“技巧”，而非标准用法。
+
+---
+
+**第五步：理解注入组的设计意图**
+
+STM32 参考手册（RM0008）指出，注入组（Injected Group）区别于常规组（Regular Group）的核心特性：
+
+- 注入组**没有**像常规组那样的连续转换模式（`CONT` 位）。
+- 每次注入转换完成后，ADC 硬件自动进入空闲状态，**必须通过软件或下一次硬件触发才能启动新一轮转换**。
+- 注入组被设计用于“高优先级突发采样”，而非连续数据流。
+
+因此，**正确的做法应当是在每次转换完成后，由软件重新“武装”ADC，使其等待下一次触发**。
+
+---
+
+**第六步：最终修复方案**
+
+在 `HAL_ADCEx_InjectedConvCpltCallback` 中，读取数据后、发送到队列之前，显式调用 `HAL_ADCEx_InjectedStart_IT` 重新使能中断并进入等待触发状态：
+
+```c
+void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    if (hadc->Instance == ADC1) {
+        // 1. 读取 ADC 转换值
+        float readings = HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1)
+                         / 4095.0f * 3.3f;
+
+        // 2. 计算万用表测量结果
+        dmm_handle_t handle = {0};
+        dmm_get_range(&handle.range);
+        dmm_calc_data(&handle, readings);
+
+        // 3. 【修复点】重新武装 ADC，等待下一次 TIM2 TRGO 触发
+        HAL_ADCEx_InjectedStart_IT(&hadc1);
+
+        // 4. 将结果通过邮箱发送给其他任务
+        xQueueOverwriteFromISR(dmm_mail, &handle, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+}
+```
+
+`HAL_ADCEx_InjectedStart_IT` 内部会重新置位 `CR1` 的 `JEOCIE` 位，使 ADC 再次响应后续的硬件触发信号。
+
+---
+
+**根本原因总结**
+
+1. **函数名误写**：首次回调函数名写为常规组版本 `HAL_ADC_ConvCpltCallback`，导致中断无法进入。修正为 `HAL_ADCEx_InjectedConvCpltCallback` 后恢复正常。
+
+2. **HAL 库的设计预设**：HAL 库假定注入组仅用于单次突发测量，因此在转换完成后自动禁用中断（`JEOCIE` 清零）。这与“定时器周期性触发注入组”的使用场景冲突。
+
+3. **标准解决方案**：在中断回调末尾显式调用 `HAL_ADCEx_InjectedStart_IT`，由软件重新武装 ADC 以等待下一次硬件触发。这是符合 STM32 参考手册的标准做法。
+
+---
+
+**经验教训**
+
+- **使用 HAL 库时注意回调函数命名规范**：
+  - 常规组回调：`HAL_ADC_ConvCpltCallback`
+  - 注入组回调：`HAL_ADCEx_InjectedConvCpltCallback`
+  
+- **HAL 库的“Bug”本质是设计预设偏差**：HAL 库的行为基于特定使用场景假设，当实际需求偏离该假设时，需要理解其内部逻辑并采取标准应对方案。
+
+- **硬件手册优先级高于 HAL 库实现**：当 HAL 库行为与参考手册描述不一致时，应优先遵循手册规定的硬件操作方式。
+
+- **选择标准做法而非“技巧”**：教程的“修改常规组配置”方案依赖于 HAL 库的内部实现细节（`EXTTRIG` 位的判定），更换 HAL 库版本或芯片型号后可能失效。在中断回调中显式调用 `Start_IT` 是符合硬件手册的标准做法，具有更好的可移植性和可维护性。
+
+---
+
+**验证方法**
+
+修复后，在 GDB 中持续观察：
+
+```gdb
+# 设置观察点监控 CR1 寄存器的变化
+watch *(uint32_t*)0x40012404
+
+# 或定时打印 CR1 值
+p/x ADC1->CR1
+```
+
+`JEOCIE` 位（第 5 位）将始终保持为 1，TIM2 每次溢出时均能正常进入中断回调。万用表数值将以 10Hz 频率稳定更新。
+
+---
+

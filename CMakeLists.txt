@@ -48,7 +48,9 @@ add_subdirectory(cmake/stm32cubemx)
 file(GLOB USER_SOURCES
     User/Board/*.c
     User/Drivers/*.c
+    User/Drivers/GUI/*.c
     User/Tasks/*.c
+    # User/Tasks/GUI/*.c
 )
 
 # Add User includes
@@ -57,6 +59,7 @@ set(USER_INCLUDES
     User/Drivers/
     User/Drivers/GUI/
     User/Tasks/
+    # User/Tasks/GUI/
 )
 
 # ------------------------------------------------------------------------------
