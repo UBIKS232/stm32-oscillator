@@ -88,19 +88,28 @@ dmm_handle_t dmm_get_handle(void) {
     return handle;
 }
 
+#define VREF 1.205f
+#define PWR_MULTIPLIER 13.0f
+
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc) {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
     if (hadc->Instance == ADC1) {
-        // get readings
-        float readings =
-            HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1) / 4095.0f *
-            3.3f;
+        // get readings, with calibration
+        float readings_vref =
+            HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_2);
+        float readings_vin =
+            HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_1);
+        float readings_pwr =
+            HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_3);
+        readings_vin = (readings_vin / readings_vref) * VREF;
+        readings_pwr = (readings_pwr / readings_vref) * VREF * PWR_MULTIPLIER;
 
-        // calc data
+        // process data
         dmm_handle_t handle = {0};
+        handle.pwr = readings_pwr;
         dmm_get_range(&handle.range);
-        dmm_calc_data(&handle, readings);
+        dmm_calc_data(&handle, readings_vin);
 
         // set ADCx->CR1JEOCIE
         HAL_ADCEx_InjectedStart_IT(&hadc1);

@@ -3,8 +3,8 @@
 #include "dmm.h"
 
 const char* dmm_range_str[] = {
-    "DMM-2V:",     "DMM-10V:",     "DMM-50V:",  "DMM-1KOhm:",
-    "DMM-10KOhm:", "DMM-100KOhm:", "DMM-1MOhm:"};
+    "DMM-2V:",     "DMM-10V:",     "DMM-50V:",  "DMM-1K:",
+    "DMM-10K:", "DMM-100K:", "DMM-1M:"};
 
 char dmm_range_unit = 'V';
 

@@ -6,6 +6,7 @@
 
 #include "dmm.h"
 #include "label_dmm.h"
+#include "label_pwr.h"
 
 #define LCD_UPDATE_PERIOD_MS 100
 
@@ -17,6 +18,7 @@ void lcd_task(void* pv_arg) {
 
     while (1) {
         label_cmm_repaint();
+        label_pwr_repaint();
         vTaskDelay(pdMS_TO_TICKS(LCD_UPDATE_PERIOD_MS));
     }
 
