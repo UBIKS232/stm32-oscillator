@@ -1,14 +1,13 @@
 #include "main.h"
 #include "dmm.h"
+#include "gui_config.h"
 #include "FreeRTOS.h"
 #include "queue.h"
+#include "event_groups.h"
 
 #define DMM_QUE_LENGTH 1
 #define DMM_QUE_ITEM_SIZE sizeof(dmm_handle_t)
 QueueHandle_t dmm_mail = {0};
-
-extern TIM_HandleTypeDef htim2;
-extern ADC_HandleTypeDef hadc1;
 
 static void dmm_get_range(dmm_range_t* range) {
     *range = DMM_RANGE_1KOHM;
@@ -73,6 +72,9 @@ static void dmm_calc_data(dmm_handle_t* handle, float readings) {
 }
 
 void dmm_init(void) {
+    extern TIM_HandleTypeDef htim2;
+    extern ADC_HandleTypeDef hadc1;
+
     dmm_mail = xQueueCreate(DMM_QUE_LENGTH, DMM_QUE_ITEM_SIZE);
 
     HAL_TIM_Base_Start(&htim2);
@@ -92,6 +94,9 @@ dmm_handle_t dmm_get_handle(void) {
 #define PWR_MULTIPLIER 13.0f
 
 void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc) {
+    extern ADC_HandleTypeDef hadc1;
+    extern EventGroupHandle_t lcd_event;
+
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
     if (hadc->Instance == ADC1) {
@@ -114,7 +119,9 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc) {
         // set ADCx->CR1JEOCIE
         HAL_ADCEx_InjectedStart_IT(&hadc1);
 
-        // send value
+        // send value and update event
+        xEventGroupSetBitsFromISR(lcd_event, LABEL_DMM_BIT | LABEL_PWR_BIT,
+                                  &xHigherPriorityTaskWoken);
         xQueueOverwriteFromISR(dmm_mail, &handle, &xHigherPriorityTaskWoken);
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }

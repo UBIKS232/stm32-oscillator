@@ -6,9 +6,9 @@
 
 #define UART_UPDATE_PERIOD_MS 100
 
-extern QueueHandle_t uart_que;
-
 void uart_task(void* pv_arg) {
+    extern QueueHandle_t uart_que;
+
     uart_init();
 
     char* pc_msg = NULL;

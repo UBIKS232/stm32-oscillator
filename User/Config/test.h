@@ -6,11 +6,10 @@
 #include "task.h"
 #include "semphr.h"
 
-extern SemaphoreHandle_t count_sem;
-
-extern UART_HandleTypeDef huart1;
-
 void tt1(void* pv_arg) {
+    extern SemaphoreHandle_t count_sem;
+    extern UART_HandleTypeDef huart1;
+
     HAL_UART_Transmit(&huart1, (uint8_t*)"A waiting.\n", sizeof("A waiting.\n"),
                       HAL_MAX_DELAY);
 
@@ -30,6 +29,9 @@ void tt1(void* pv_arg) {
 }
 
 void tt2(void* pv_arg) {
+    extern SemaphoreHandle_t count_sem;
+    extern UART_HandleTypeDef huart1;
+
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     HAL_UART_Transmit(&huart1, (uint8_t*)"B waiting.\n", sizeof("B waiting.\n"),
@@ -49,6 +51,9 @@ void tt2(void* pv_arg) {
 }
 
 void tt3(void* pv_arg) {
+    extern SemaphoreHandle_t count_sem;
+    extern UART_HandleTypeDef huart1;
+
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     HAL_UART_Transmit(&huart1, (uint8_t*)"C waiting.\n", sizeof("C waiting.\n"),

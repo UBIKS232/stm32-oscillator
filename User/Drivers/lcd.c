@@ -4,8 +4,11 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "event_groups.h"
 
-SemaphoreHandle_t lcd_sem = NULL;  // - lcd_task
+LCD_InitTypeDef lcd_init_t = {0};
+SemaphoreHandle_t lcd_sem = NULL;     // - lcd_task
+EventGroupHandle_t lcd_event = NULL;  // - lcd_task
 
 void lcd_bl_control(uint8_t on) {
     HAL_GPIO_WritePin(lcd_bl_GPIO_Port, lcd_bl_Pin, on);
@@ -42,14 +45,12 @@ static void lcd_send_data(uint8_t* data, uint16_t size) {
     HAL_GPIO_WritePin(lcd_nss_GPIO_Port, lcd_nss_Pin, GPIO_PIN_SET);
 }
 
-LCD_InitTypeDef lcd_init_t = {0};
-
 void lcd_init(void) {
     // 创建lcd信号量
-    if (lcd_sem == NULL) {
-        lcd_sem = xSemaphoreCreateBinary();
-    }
-    if (!lcd_sem) return;
+    lcd_sem = xSemaphoreCreateBinary();
+
+    // 创建事件组, 按需绘制
+    lcd_event = xEventGroupCreate();
 
     // 使用api初始化lcd
     lcd_init_t.reset_callback = lcd_reset;

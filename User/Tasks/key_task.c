@@ -3,19 +3,18 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-extern key_hw_context_t key_hws[KEY_NUM_COUNT];
-extern key_handle_t key_handles[KEY_NUM_COUNT];
-
 #define KEY_UPDATE_PERIOD_MS 10
 
-extern void key_1_init(void);
-extern void key_2_init(void);
-extern void key_3_init(void);
-extern void key_4_init(void);
-extern void key_up_init(void);
-extern void key_down_init(void);
-
 void key_task(void* pv_arg) {
+    extern key_handle_t key_handles[KEY_NUM_COUNT];
+
+    extern void key_1_init(void);
+    extern void key_2_init(void);
+    extern void key_3_init(void);
+    extern void key_4_init(void);
+    extern void key_up_init(void);
+    extern void key_down_init(void);
+
     key_1_init();
     key_2_init();
     key_3_init();

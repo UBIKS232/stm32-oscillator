@@ -2,13 +2,12 @@
 #include "label_dmm.h"
 #include "dmm.h"
 
-const char* dmm_range_str[] = {
-    "DMM-2V:",     "DMM-10V:",     "DMM-50V:",  "DMM-1K:",
-    "DMM-10K:", "DMM-100K:", "DMM-1M:"};
+const char* dmm_range_str[] = {"DMM-2V:",  "DMM-10V:",  "DMM-50V:", "DMM-1K:",
+                               "DMM-10K:", "DMM-100K:", "DMM-1M:"};
 
 char dmm_range_unit = 'V';
 
-void label_cmm_repaint(void) {
+void label_dmm_repaint(void) {
     LCD_SetCursor(110, 215);
     LCD_SetBrush(0xcccccc);  // #cccccc
     LCD_FillRect(120, 15);
@@ -19,8 +18,10 @@ void label_cmm_repaint(void) {
     dmm_handle_t handle = dmm_get_handle();
     LCD_PrintString(dmm_range_str[handle.range]);
 
-    if(handle.range >= DMM_RANGE_1KOHM){
+    if (handle.range >= DMM_RANGE_1KOHM) {
         dmm_range_unit = 'R';
+    } else {
+        dmm_range_unit = 'V';
     }
 
     LCD_PrintFloatSI(handle.value, 6, &dmm_range_unit);

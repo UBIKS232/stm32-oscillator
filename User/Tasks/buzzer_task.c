@@ -4,11 +4,11 @@
 #include "task.h"
 #include "semphr.h"
 
-extern SemaphoreHandle_t buzzer_sem;
-
 #define BUZZER_UPDATE_PERIOD_MS 100
 
 void buzzer_task(void* pv_arg) {
+    extern SemaphoreHandle_t buzzer_sem;
+
     buzzer_init();
 
     while (1) {
