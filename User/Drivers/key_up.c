@@ -1,14 +1,21 @@
 #include "key.h"
-
-#include "my_uart.h"
 #include "buzzer.h"
+// #include "my_uart.h"
+#include "panel_generator.h"
+#include "panel_runmode.h"
+#include "panel_scale.h"
+#include "panel_cursor.h"
 
 const char* key_up_msg = "key_up_pressed\n";
 
 static void key_up_callback(key_event_t event) {
     if (event == KEY_EVENT_CLICK) {
-        uart_action(&key_up_msg);
         buzzer_beep();
+        // uart_action(&key_up_msg);
+        panel_generator_adjust(+1);
+        panel_runmode_adjust(+1);
+        panel_scale_adjust(+1);
+        panel_cursor_adjust(+1);
     }
 }
 

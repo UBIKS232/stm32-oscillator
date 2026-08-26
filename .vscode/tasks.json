@@ -10,7 +10,7 @@
                 "isDefault": true
             },
             "problemMatcher": [],
-            "detail": "Buid All"
+            "detail": "Build All"
         },
         {
             "label": "Rebuild Debug",
@@ -59,11 +59,11 @@
                 "quit"
             ],
             "presentation": {
-                "echo": true, // 显示执行的命令
-                "reveal": "always", // 任务运行时始终显示终端面板
-                "focus": false, // 不要抢占焦点，保持后台
-                "panel": "shared", // 与其它任务共享同一个终端面板
-                "clear": true // 清除之前内容
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "clear": true
             },
             "problemMatcher": []
         },

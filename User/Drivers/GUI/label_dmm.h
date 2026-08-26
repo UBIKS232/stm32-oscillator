@@ -1,6 +1,6 @@
-#ifndef _LABEL_DMM_TASK_
-#define _LABEL_DMM_TASK_
+#ifndef _LABEL_DMM_H_
+#define _LABEL_DMM_H_
 
 void label_dmm_repaint(void);
 
-#endif // _LABEL_DMM_TASK_
+#endif // _LABEL_DMM_H_

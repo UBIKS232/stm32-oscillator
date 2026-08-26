@@ -1,14 +1,17 @@
-#include "main.h"
 #include "key.h"
-
 #include "buzzer.h"
+#include "panel_generator.h"
+#include "panel_runmode.h"
+#include "panel_scale.h"
+#include "panel_cursor.h"
 
 static void key_down_callback(key_event_t event) {
     if (event == KEY_EVENT_CLICK) {
-        // extern UART_HandleTypeDef huart1;
-        // HAL_UART_Transmit(&huart1, (uint8_t*)"key_down pressed.\n",
-        //                   strlen("key_down pressed.\n"), HAL_MAX_DELAY);
         buzzer_beep();
+        panel_generator_adjust(-1);
+        panel_runmode_adjust(-1);
+        panel_scale_adjust(-1);
+        panel_cursor_adjust(-1);
     }
 }
 

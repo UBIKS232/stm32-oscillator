@@ -14,27 +14,34 @@
 // #include "fp.h"
 #endif
 
-typedef struct
-{
-	void (*reset_callback)(void); /* 控制LCD复位的回调函数 */
-	void (*send_command_callback)(uint8_t cmd); /* 通过SPI发送命令的回调函数 */
-	void (*send_data_callback)(uint8_t *data, uint16_t size); /* 通过SPI发送数据的回调函数 */
+// 颜色定义与元素解耦
+#define COLOR_PURPLE 0xff7bff       // 标题栏背景 #ff7bff
+#define COLOR_BLACK 0x000000        // 标题文字 #000000
+#define COLOR_WHITE 0xffffff        // 标题文字 #ffffff
+#define COLOR_GRAY 0xcccccc         // 面板背景 #cccccc
+#define COLOR_CYAN 0x00ffff         // 选中高亮(光标&文本背景) #00ffff
+#define COLOR_DARK_YELLOW 0xdaa400  // scale 标签背景色 #daa400
+
+typedef struct {
+    void (*reset_callback)(void);               /* 控制LCD复位的回调函数 */
+    void (*send_command_callback)(uint8_t cmd); /* 通过SPI发送命令的回调函数 */
+    void (*send_data_callback)(uint8_t* data,
+                               uint16_t size); /* 通过SPI发送数据的回调函数 */
 
 } LCD_InitTypeDef;
 
-typedef struct
-{
-	const float *Waveform; // 波形数据
-	uint16_t WaveLength;   // 波形数据的长度
-	uint16_t XOffset;      // 波形显示的起始位置
-	float XScale;          // X轴尺度因子，单位s/格
-	float YScale;          // Y轴尺度因子，单位V/格
-	uint32_t SampleRate;   // 采样率，单位Hz
-	int8_t CursorX1Pct;   // x轴游标1的百分比位置，单位%，范围0~100
-	int8_t CursorY1Pct;    // y轴游标1的百分比位置，单位%，范围-100~+100
-	int8_t CursorX2Pct;   // x轴游标2的百分比位置，单位%，范围0~100
-	int8_t CursorY2Pct;    // y轴游标2的百分比位置，单位%，范围-100~+100
-	float Trigger;         // 触发电压，单位V
+typedef struct {
+    const float* Waveform;  // 波形数据
+    uint16_t WaveLength;    // 波形数据的长度
+    uint16_t XOffset;       // 波形显示的起始位置
+    float XScale;           // X轴尺度因子，单位s/格
+    float YScale;           // Y轴尺度因子，单位V/格
+    uint32_t SampleRate;    // 采样率，单位Hz
+    int8_t CursorX1Pct;     // x轴游标1的百分比位置，单位%，范围0~100
+    int8_t CursorY1Pct;     // y轴游标1的百分比位置，单位%，范围-100~+100
+    int8_t CursorX2Pct;     // x轴游标2的百分比位置，单位%，范围0~100
+    int8_t CursorY2Pct;     // y轴游标2的百分比位置，单位%，范围-100~+100
+    float Trigger;          // 触发电压，单位V
 
 } WaveformParamTypeDef;
 
@@ -44,10 +51,8 @@ typedef struct
 //
 // void LCD_Init(LCD_InitTypeDef *Init);
 
-
-#define LCD_Init(Init) \
-		LCD_GenericInit(Init, NULL)
-void LCD_GenericInit(LCD_InitTypeDef *Init, const char *Param);
+#define LCD_Init(Init) LCD_GenericInit(Init, NULL)
+void LCD_GenericInit(LCD_InitTypeDef* Init, const char* Param);
 
 //
 // @功能：设置光标的位置，LCD的坐标系原点在左上角
@@ -114,7 +119,7 @@ void LCD_PrintChar(uint32_t Unicode);
 //        字符串的左下角点位于当前光标处，前景色为画笔颜色，背景色为画刷颜色
 // @参数：Str - 要绘制的字符串
 //
-void LCD_PrintString(const char *Str);
+void LCD_PrintString(const char* Str);
 
 //
 // @功能：格式化浮点数并在屏幕上显示
@@ -123,7 +128,8 @@ void LCD_PrintString(const char *Str);
 // @参数：IntegerDigits - 整数部分要显示的位数，不足左侧填充0
 // @参数：FractionalDigits - 小数部分要显示的位数，不足右侧填充0
 //
-void LCD_PrintFloat(float Value, uint16_t IntegerDigits, uint16_t FractionalDigits);
+void LCD_PrintFloat(float Value, uint16_t IntegerDigits,
+                    uint16_t FractionalDigits);
 
 //
 // @功能：以国际单位制打印浮点数
@@ -131,7 +137,7 @@ void LCD_PrintFloat(float Value, uint16_t IntegerDigits, uint16_t FractionalDigi
 // @参数：Length - 字符串的总长度
 // @参数：UnitStr - 单位字符串
 //
-void LCD_PrintFloatSI(float Value, uint16_t Length, const char *UnitStr);
+void LCD_PrintFloatSI(float Value, uint16_t Length, const char* UnitStr);
 
 //
 // @功能：格式化整数并在屏幕上显示
@@ -159,7 +165,7 @@ void LCD_PrintHex(unsigned int value, uint16_t Digits);
 //                    绿色 = 0000 0111 1110 0000b = 0x07e0
 //                    蓝色 = 0000 0000 0001 1111b = 0x001f
 //
-void LCD_DrawBitmap(uint16_t Width, uint16_t Height, const uint8_t *pData);
+void LCD_DrawBitmap(uint16_t Width, uint16_t Height, const uint8_t* pData);
 
 //
 // @功能：绘制示波器波形
@@ -169,13 +175,17 @@ void LCD_DrawBitmap(uint16_t Width, uint16_t Height, const uint8_t *pData);
 // @参数：WaveformParam.XScale - X轴缩放比，横坐标每格表示的时间长度，单位s/格
 // @参数：WaveformParam.YScale - Y轴缩放比，纵坐标每格表示的电压大小，单位V/格
 // @参数：WaveformParam.SampleRate - 采样率，单位Hz
-// @参数：WaveformParam.CursorX1Pct - 横轴（时间轴）游标1的位置，单位百分比，范围0 ~ 100
-// @参数：WaveformParam.CursorY1Pct - 纵轴（电压轴）游标1的位置，单位百分比，范围-100 ~ +100
-// @参数：WaveformParam.CursorX2Pct - 横轴（时间轴）游标2的位置，单位百分比，范围0 ~ 100
-// @参数：WaveformParam.CursorY2Pct - 纵轴（电压轴）游标2的位置，单位百分比，范围-100 ~ +100
+// @参数：WaveformParam.CursorX1Pct -
+// 横轴（时间轴）游标1的位置，单位百分比，范围0 ~ 100
+// @参数：WaveformParam.CursorY1Pct -
+// 纵轴（电压轴）游标1的位置，单位百分比，范围-100 ~ +100
+// @参数：WaveformParam.CursorX2Pct -
+// 横轴（时间轴）游标2的位置，单位百分比，范围0 ~ 100
+// @参数：WaveformParam.CursorY2Pct -
+// 纵轴（电压轴）游标2的位置，单位百分比，范围-100 ~ +100
 // @参数：WaveformParam.TriggerLevel - 触发电压的大小，单位V
 //
-void LCD_DrawWaveform(WaveformParamTypeDef *WaveformParam);
+void LCD_DrawWaveform(WaveformParamTypeDef* WaveformParam);
 
 //
 // @功能：获取X轴游标的真实值
@@ -183,7 +193,7 @@ void LCD_DrawWaveform(WaveformParamTypeDef *WaveformParam);
 // @参数：XScale - X轴的缩放比例，单位：秒/格
 // @返回：对应的游标值，单位：秒
 //
-float LCD_GetXCursorValue(uint8_t XPos, float XScale);
+float LCD_GetXCursorValue(int8_t XPos, float XScale);
 
 //
 // @功能：获取Y轴游标的真实值
@@ -191,6 +201,6 @@ float LCD_GetXCursorValue(uint8_t XPos, float XScale);
 // @参数：YScale - Y轴的缩放比例，单位：伏特/格
 // @返回：对应的游标值，单位：伏特
 //
-float LCD_GetYCursorValue(uint8_t YPos, float YScale);
+float LCD_GetYCursorValue(int8_t YPos, float YScale);
 
 #endif /* INC_LCD_H_ */

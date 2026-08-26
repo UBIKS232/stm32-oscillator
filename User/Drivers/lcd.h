@@ -1,7 +1,7 @@
 #ifndef _LCD_H_
 #define _LCD_H_
 
-#include "stdint.h"
+#include <stdint.h>
 
 void lcd_bl_control(uint8_t bl_on);
 void lcd_init(void);

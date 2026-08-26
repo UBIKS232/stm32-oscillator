@@ -50,7 +50,8 @@ void key_scan(key_handle_t* const handle) {
     handle->current = handle->read(handle->hw);
 
     // 仅仅处理单击的情况
-    if ((handle->previous == 0U) && (handle->current == 1U)) { // 捕捉逻辑上升沿
+    if ((handle->previous == 0U) &&
+        (handle->current == 1U)) {  // 捕捉逻辑上升沿
         if (handle->callback) {
             handle->callback(KEY_EVENT_CLICK);
         }

@@ -1,5 +1,6 @@
 #include "lcd.h"
 #include "liblcd.h"
+#include "gui_config.h"
 #include "main.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -51,6 +52,7 @@ void lcd_init(void) {
 
     // 创建事件组, 按需绘制
     lcd_event = xEventGroupCreate();
+    xEventGroupSetBits(lcd_event, ALL_REPAINT_BITS);
 
     // 使用api初始化lcd
     lcd_init_t.reset_callback = lcd_reset;
