@@ -2,6 +2,7 @@
 #include "lcd.h"
 #include "gui_config.h"
 #include "dmm.h"
+#include "osc.h"
 #include "label_dmm.h"
 #include "label_pwr.h"
 #include "panel_generator.h"
@@ -10,7 +11,7 @@
 #include "label_scale.h"
 #include "panel_cursor.h"
 #include "label_cursor.h"
-#include "panel_waveform.h"
+#include "panel_osc.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
@@ -21,6 +22,7 @@ void lcd_task(void* pv_arg) {
     extern EventGroupHandle_t lcd_event;
 
     dmm_init();
+    osc_init(); // osc_init should be after dmm_init!
     lcd_init();
 
     while (1) {
@@ -51,8 +53,8 @@ void lcd_task(void* pv_arg) {
         if (event & LABEL_CURSOR_BIT) {
             label_cursor_repaint();
         }
-        if (event & PANEL_WAVEFORM_BIT) {
-            panel_waveform_repaint();
+        if (event & PANEL_OSC_BIT) {
+            panel_osc_repaint();
         }
         vTaskDelay(pdMS_TO_TICKS(LCD_UPDATE_PERIOD_MS));
     }

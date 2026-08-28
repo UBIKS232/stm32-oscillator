@@ -18,6 +18,7 @@ typedef struct dmm_handle {
     dmm_range_t range;
     float pwr;    // 稳压源
     float value;  // 万用表读数
+    float trigger;  // osc触发电压
 } dmm_handle_t;
 
 void dmm_init(void);

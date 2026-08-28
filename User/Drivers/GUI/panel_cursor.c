@@ -85,7 +85,7 @@ void panel_cursor_select(void) {
     }
     extern EventGroupHandle_t lcd_event;
     xEventGroupSetBits(
-        lcd_event, PANEL_CURSOR_BIT | LABEL_CURSOR_BIT | PANEL_WAVEFORM_BIT);
+        lcd_event, PANEL_CURSOR_BIT | LABEL_CURSOR_BIT | PANEL_OSC_BIT);
 }
 
 void panel_cursor_deselect(void) {
@@ -97,7 +97,7 @@ void panel_cursor_deselect(void) {
         // cursor_y2_pct = 0;
         extern EventGroupHandle_t lcd_event;
         xEventGroupSetBits(lcd_event, PANEL_CURSOR_BIT | LABEL_CURSOR_BIT |
-                                          PANEL_WAVEFORM_BIT);
+                                          PANEL_OSC_BIT);
     }
 }
 
@@ -131,7 +131,7 @@ void panel_cursor_adjust(int8_t direction) {
 
     extern EventGroupHandle_t lcd_event;
     xEventGroupSetBits(
-        lcd_event, PANEL_CURSOR_BIT | LABEL_CURSOR_BIT | PANEL_WAVEFORM_BIT);
+        lcd_event, PANEL_CURSOR_BIT | LABEL_CURSOR_BIT | PANEL_OSC_BIT);
 }
 
 // getter functions for label_cursor

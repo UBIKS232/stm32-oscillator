@@ -14,8 +14,12 @@ void led_task(void* pv_arg) {
     TickType_t exact_time = xTaskGetTickCount();
 
     while (1) {
-        vTaskDelayUntil(&exact_time, pdMS_TO_TICKS(LED_UPDATE_PERIOD_MS));
-        led_update();
+        // vTaskDelayUntil(&exact_time, pdMS_TO_TICKS(LED_UPDATE_PERIOD_MS));
+        // led_update();
+        // test
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4);
+        vTaskDelay(pdMS_TO_TICKS(10));
+        // test
     }
 
     vTaskDelete(NULL);

@@ -11,9 +11,9 @@ QueueHandle_t uart_que = {0};
 
 void uart_init(void) {
     uart_que = xQueueCreate(UART_QUE_LENGTH, UART_QUE_ITEM_SIZE);
-    if (uart_que == 0) {
-        while (1);
-    }
+    // if (uart_que == 0) {
+    //     while (1);
+    // }
 }
 
 void uart_action(const char* pc_msg[]) {

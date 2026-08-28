@@ -110,9 +110,19 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc) {
         readings_vin = (readings_vin / readings_vref) * VREF;
         readings_pwr = (readings_pwr / readings_vref) * VREF * PWR_MULTIPLIER;
 
+        float readings_trigger =
+            HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_4) / 4095.0f *
+                3.3f * 2.0f -
+            2.5f;
+        // float readings_trigger =
+        //     HAL_ADCEx_InjectedGetValue(&hadc1, ADC_INJECTED_RANK_4);
+        // readings_trigger =
+        //     (readings_trigger / readings_vref) * VREF * 2.0f - 2.5f;
+
         // process data
         dmm_handle_t handle = {0};
         handle.pwr = readings_pwr;
+        handle.trigger = readings_trigger;
         dmm_get_range(&handle.range);
         dmm_calc_data(&handle, readings_vin);
 

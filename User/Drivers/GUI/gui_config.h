@@ -17,12 +17,12 @@
     ((EventBits_t)(0x1 << 6))  // Bit for cursor panel update
 #define LABEL_CURSOR_BIT \
     ((EventBits_t)(0x1 << 8))  // Bit for cursor label update
-#define PANEL_WAVEFORM_BIT \
+#define PANEL_OSC_BIT \
     ((EventBits_t)(0x1 << 7))  // Bit for waveform panel update
 #define ALL_REPAINT_BITS                                                       \
     (LABEL_DMM_BIT | LABEL_PWR_BIT | PANEL_GENERATOR_BIT | PANEL_RUNMODE_BIT | \
      PANEL_SCALE_BIT | LABEL_SCALE_BIT | PANEL_CURSOR_BIT | LABEL_CURSOR_BIT | \
-     PANEL_WAVEFORM_BIT)  // All repaint event bits
+     PANEL_OSC_BIT)  // All repaint event bits
 
 // common panel dimensions and positions
 #define PANEL_COMMON_X 250       // Common X origin for all panels

@@ -1,4 +1,5 @@
 #include "panel_scale.h"
+#include "osc.h"
 #include "liblcd.h"
 #include "gui_config.h"
 #include "FreeRTOS.h"
@@ -78,20 +79,24 @@ void panel_scale_select(void) {
     }
     extern EventGroupHandle_t lcd_event;
     xEventGroupSetBits(lcd_event, PANEL_SCALE_BIT | LABEL_SCALE_BIT |
-                                      LABEL_CURSOR_BIT | PANEL_WAVEFORM_BIT);
+                                      LABEL_CURSOR_BIT | PANEL_OSC_BIT);
 }
 
 void panel_scale_deselect(void) {
     if (is_selected_index >= 0) {
         is_selected_index = -1;
-        x_scale_index = 5;  // default 500us
-        y_scale_index = 3;  // default 1V
+        // x_scale_index = 5;  // default 500us
+        // y_scale_index = 3;  // default 1V
         extern EventGroupHandle_t lcd_event;
         xEventGroupSetBits(lcd_event, PANEL_SCALE_BIT | LABEL_SCALE_BIT |
                                           LABEL_CURSOR_BIT |
-                                          PANEL_WAVEFORM_BIT);
+                                          PANEL_OSC_BIT);
     }
 }
+
+static const uint16_t psc_list[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static const uint16_t arr_list[] = {143,  143,  143,  143,   225,   561,
+                                    1124, 2251, 5624, 11249, 22549, 56249};
 
 void panel_scale_adjust(int8_t direction) {
     if (is_selected_index < 0) return;
@@ -109,9 +114,12 @@ void panel_scale_adjust(int8_t direction) {
             return;
     }
 
+    // 根据x_scale_index的值设置采样率
+    osc_set_sample_rate(psc_list[x_scale_index], arr_list[x_scale_index]);
+
     extern EventGroupHandle_t lcd_event;
     xEventGroupSetBits(lcd_event, PANEL_SCALE_BIT | LABEL_SCALE_BIT |
-                                      LABEL_CURSOR_BIT | PANEL_WAVEFORM_BIT);
+                                      LABEL_CURSOR_BIT | PANEL_OSC_BIT);
 }
 
 float panel_scale_get_x(void) { return x_scales[x_scale_index]; }
