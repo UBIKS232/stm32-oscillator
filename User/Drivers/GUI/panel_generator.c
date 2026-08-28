@@ -1,5 +1,6 @@
 #include "liblcd.h"
 #include "gui_config.h"
+#include "generator.h"
 #include "panel_generator.h"
 #include "FreeRTOS.h"
 #include "event_groups.h"
@@ -99,8 +100,8 @@ void panel_generator_deselect(void) {
 
     if (is_selected_index != -1) {
         is_selected_index = -1;
-        waveform = PANEL_GENRATOR_OFF;
-        freq_index = 4;
+        // waveform = PANEL_GENRATOR_OFF;
+        // freq_index = 4;
         xEventGroupSetBits(lcd_event, PANEL_GENERATOR_BIT);
     }
 }
@@ -112,10 +113,12 @@ void panel_generator_adjust(int8_t direction) {
     switch (is_selected_index) {
         case 0:  // param1: waveform
             waveform = (waveform + direction + 4) % 4;
+            gen_set_waveform(waveform);
             break;
         case 1:  // param2: frequence
             freq_index = (freq_index + direction + freqs_cnt) % freqs_cnt;
             freq = freqs[freq_index];
+            gen_set_freq(freq);
             break;
         default:
             return;

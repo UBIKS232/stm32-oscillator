@@ -7,7 +7,8 @@ typedef enum panel_generator_state {
     PANEL_GENRATOR_OFF = 0,
     PANEL_GENRATOR_SIN,
     PANEL_GENRATOR_TRIANGLE,
-    PANEL_GENRATOR_SQUARE
+    PANEL_GENRATOR_SQUARE,
+    PANEL_GENRATOR_COUNT
 } panel_generator_state_t;
 
 void panel_generator_repaint(void);

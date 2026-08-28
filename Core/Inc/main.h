@@ -72,8 +72,6 @@ void Error_Handler(void);
 #define osc_trigger_Pin GPIO_PIN_3
 #define osc_trigger_GPIO_Port GPIOA
 #define osc_trigger_EXTI_IRQn EXTI3_IRQn
-#define awg_Pin GPIO_PIN_4
-#define awg_GPIO_Port GPIOA
 #define dmm_50V_Pin GPIO_PIN_12
 #define dmm_50V_GPIO_Port GPIOB
 #define dmm_10V_Pin GPIO_PIN_13
